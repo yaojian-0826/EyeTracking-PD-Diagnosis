@@ -160,8 +160,19 @@ def get_shap_single(explainer, X_row):
     """Get SHAP values for a single sample (class 1)."""
     sv = explainer.shap_values(X_row)
     if isinstance(sv, list):
-        return sv[1][0] if len(sv) == 2 else sv[0]
-    return sv[0] if sv.ndim > 1 else sv
+        sv = np.array(sv)
+    # Handle different return shapes:
+    # (1, 5, 2) -> DataFrame with 1 row, 5 features, 2 classes
+    # (5, 2) -> 1D array input, 5 features, 2 classes
+    # (5,) -> already extracted
+    if sv.ndim == 3:          # (1, n_features, n_classes)
+        return sv[0, :, 1]
+    elif sv.ndim == 2 and sv.shape[1] == 2:  # (n_features, 2)
+        return sv[:, 1]
+    elif sv.ndim == 2:        # (1, n_features)
+        return sv[0]
+    else:
+        return np.array(sv).flatten()
 
 
 # ══════════════════════════════════════════
